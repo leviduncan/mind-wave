@@ -96,8 +96,9 @@ const SessionSelect = () => {
                     <div className="font-medium">{option.label}</div>
                     <div className="text-sm text-muted-foreground">{option.description}</div>
                   </div>
-                  <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center ml-2 transition-all duration-200 ease-in-out 
-                    ${selectedDuration === option.id ? "border-primary" : "border-muted"}">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ml-2 transition-all duration-200 ease-in-out ${
+                    selectedDuration === option.id ? "border-primary" : "border-muted"
+                  }`}>
                     {selectedDuration === option.id && <div className="w-3 h-3 rounded-full bg-primary" />}
                   </div>
                 </div>
