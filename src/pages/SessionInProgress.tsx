@@ -35,51 +35,85 @@ const SessionInProgress = () => {
   useEffect(() => {
     if (!currentSession.track) return;
     
-    // Extract frequency value from the track string
-    const frequencyText = currentSession.track.frequency;
-    // Improved frequency extraction to handle various formats (e.g., "40 Hz", "6 Hz", etc.)
-    const frequencyMatch = frequencyText.match(/(\d+)/);
-    const frequencyValue = frequencyMatch ? parseInt(frequencyMatch[0], 10) : 40;
-    
-    console.log(`Extracted frequency value: ${frequencyValue} Hz from "${frequencyText}"`);
-    
-    // Create audio context and oscillator
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    // Configure oscillator
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(frequencyValue, audioContext.currentTime);
-    
-    // Set volume to a reasonable level
-    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-    
-    // Connect nodes
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    // Start oscillator
-    oscillator.start();
-    
-    // Show toast notification
-    toast.success(`Playing ${frequencyText} binaural beat`);
-    
-    // Store reference to audio context
-    (audioRef.current as any) = { 
-      context: audioContext, 
-      oscillator: oscillator,
-      gainNode: gainNode,
-      isPaused: false
-    };
-    
-    // Cleanup function
-    return () => {
-      if (audioRef.current) {
-        (audioRef.current as any).oscillator.stop();
-        (audioRef.current as any).context.close();
+    // Clean up any existing audio
+    if (audioRef.current) {
+      try {
+        const audio = audioRef.current as any;
+        if (audio.oscillator) {
+          audio.oscillator.stop();
+        }
+        if (audio.context) {
+          audio.context.close();
+        }
+      } catch (err) {
+        console.error("Error cleaning up audio:", err);
       }
-    };
+    }
+    
+    try {
+      // Extract frequency value from the track string
+      const frequencyText = currentSession.track.frequency;
+      
+      // More robust frequency extraction that handles different formats
+      const frequencyMatch = frequencyText.match(/(\d+)/);
+      let frequencyValue = 40; // Default fallback
+      
+      if (frequencyMatch && frequencyMatch[0]) {
+        frequencyValue = parseInt(frequencyMatch[0], 10);
+      }
+      
+      console.log(`Playing frequency: ${frequencyValue} Hz from "${frequencyText}"`);
+      
+      // Create audio context and oscillator
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      // Configure oscillator
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(frequencyValue, audioContext.currentTime);
+      
+      // Set volume to a reasonable level
+      gainNode.gain.setValueAtTime(0.2, audioContext.currentTime); // Increased volume slightly
+      
+      // Connect nodes
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Start oscillator
+      oscillator.start();
+      
+      // Show toast notification
+      toast.success(`Playing ${frequencyText} binaural beat`);
+      
+      // Store reference to audio context
+      audioRef.current = { 
+        context: audioContext, 
+        oscillator: oscillator,
+        gainNode: gainNode,
+        isPaused: false
+      } as any;
+      
+      // Cleanup function
+      return () => {
+        try {
+          if (audioRef.current) {
+            const audio = audioRef.current as any;
+            if (audio.oscillator) {
+              audio.oscillator.stop();
+            }
+            if (audio.context) {
+              audio.context.close();
+            }
+          }
+        } catch (err) {
+          console.error("Error during audio cleanup:", err);
+        }
+      };
+    } catch (err) {
+      console.error("Error creating audio:", err);
+      toast.error("Failed to play audio. Please try again.");
+    }
   }, [currentSession.track]);
   
   // Timer logic
@@ -101,16 +135,20 @@ const SessionInProgress = () => {
   useEffect(() => {
     if (!audioRef.current) return;
     
-    const audio = audioRef.current as any;
-    
-    if (isPaused && !audio.isPaused) {
-      // Pause the audio
-      audio.gainNode.gain.setValueAtTime(0, audio.context.currentTime);
-      audio.isPaused = true;
-    } else if (!isPaused && audio.isPaused) {
-      // Resume the audio
-      audio.gainNode.gain.setValueAtTime(0.1, audio.context.currentTime);
-      audio.isPaused = false;
+    try {
+      const audio = audioRef.current as any;
+      
+      if (isPaused && !audio.isPaused) {
+        // Pause the audio
+        audio.gainNode.gain.setValueAtTime(0, audio.context.currentTime);
+        audio.isPaused = true;
+      } else if (!isPaused && audio.isPaused) {
+        // Resume the audio
+        audio.gainNode.gain.setValueAtTime(0.2, audio.context.currentTime); // Match the initial volume
+        audio.isPaused = false;
+      }
+    } catch (err) {
+      console.error("Error toggling audio pause state:", err);
     }
   }, [isPaused]);
   
