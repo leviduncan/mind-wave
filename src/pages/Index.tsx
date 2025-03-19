@@ -2,7 +2,16 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { Play, Clock, Star, ChevronRight } from "lucide-react";
+import { 
+  Play, 
+  Clock, 
+  Star, 
+  ChevronRight, 
+  Target, 
+  CloudSun, 
+  Moon, 
+  Calendar 
+} from "lucide-react";
 import MainLayout from "../components/layout/MainLayout";
 
 const Index = () => {
