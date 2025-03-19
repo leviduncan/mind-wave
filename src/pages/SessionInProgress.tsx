@@ -37,7 +37,11 @@ const SessionInProgress = () => {
     
     // Extract frequency value from the track string
     const frequencyText = currentSession.track.frequency;
-    const frequencyValue = parseInt(frequencyText.match(/\d+/)?.[0] || "40", 10);
+    // Improved frequency extraction to handle various formats (e.g., "40 Hz", "6 Hz", etc.)
+    const frequencyMatch = frequencyText.match(/(\d+)/);
+    const frequencyValue = frequencyMatch ? parseInt(frequencyMatch[0], 10) : 40;
+    
+    console.log(`Extracted frequency value: ${frequencyValue} Hz from "${frequencyText}"`);
     
     // Create audio context and oscillator
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
