@@ -1,14 +1,16 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { X, Pause, Play } from "lucide-react";
+import { toast } from "sonner";
 
 const SessionInProgress = () => {
   const navigate = useNavigate();
   const { currentSession, endSession } = useApp();
   const [timeRemaining, setTimeRemaining] = useState(currentSession.duration);
   const [isPaused, setIsPaused] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // Format time remaining
   const formatTime = (seconds: number) => {
@@ -29,6 +31,53 @@ const SessionInProgress = () => {
     }
   }, [currentSession.isActive, currentSession.track, navigate]);
   
+  // Generate a tone using the Web Audio API
+  useEffect(() => {
+    if (!currentSession.track) return;
+    
+    // Extract frequency value from the track string
+    const frequencyText = currentSession.track.frequency;
+    const frequencyValue = parseInt(frequencyText.match(/\d+/)?.[0] || "40", 10);
+    
+    // Create audio context and oscillator
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    // Configure oscillator
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(frequencyValue, audioContext.currentTime);
+    
+    // Set volume to a reasonable level
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    
+    // Connect nodes
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Start oscillator
+    oscillator.start();
+    
+    // Show toast notification
+    toast.success(`Playing ${frequencyText} binaural beat`);
+    
+    // Store reference to audio context
+    (audioRef.current as any) = { 
+      context: audioContext, 
+      oscillator: oscillator,
+      gainNode: gainNode,
+      isPaused: false
+    };
+    
+    // Cleanup function
+    return () => {
+      if (audioRef.current) {
+        (audioRef.current as any).oscillator.stop();
+        (audioRef.current as any).context.close();
+      }
+    };
+  }, [currentSession.track]);
+  
   // Timer logic
   useEffect(() => {
     if (!isPaused && timeRemaining > 0) {
@@ -43,6 +92,23 @@ const SessionInProgress = () => {
       navigate("/");
     }
   }, [timeRemaining, isPaused, endSession, navigate]);
+  
+  // Handle pause/play for audio
+  useEffect(() => {
+    if (!audioRef.current) return;
+    
+    const audio = audioRef.current as any;
+    
+    if (isPaused && !audio.isPaused) {
+      // Pause the audio
+      audio.gainNode.gain.setValueAtTime(0, audio.context.currentTime);
+      audio.isPaused = true;
+    } else if (!isPaused && audio.isPaused) {
+      // Resume the audio
+      audio.gainNode.gain.setValueAtTime(0.1, audio.context.currentTime);
+      audio.isPaused = false;
+    }
+  }, [isPaused]);
   
   const handleEndSession = () => {
     endSession();
