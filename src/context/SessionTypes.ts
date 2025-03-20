@@ -25,3 +25,17 @@ export interface Stats {
   sessionsCompleted: number;
   topCategories: { category: BenefitCategory; count: number }[];
 }
+
+export interface AppContextType {
+  tracks: Track[];
+  favorites: Track[];
+  recentlyPlayed: Track[];
+  stats: Stats;
+  currentSession: Session;
+  toggleFavorite: (trackId: string) => void;
+  startSession: (track: Track, duration: number) => void;
+  endSession: () => void;
+  selectCategory: (category: BenefitCategory) => Track[];
+  getSubCategories: (category: BenefitCategory) => string[];
+  getTracksBySubCategory: (category: BenefitCategory, subCategory: string) => Track[];
+}
