@@ -11,6 +11,24 @@ export interface AudioContextRef {
 export const DEFAULT_FREQUENCY = 40; // Default fallback frequency
 export const DEFAULT_VOLUME = 0.2;
 
+// Scale volume inversely with frequency to prevent lower frequencies from being too quiet
+export function getScaledVolume(frequency: number): number {
+  // Base volume amplification for lower frequencies
+  // Higher frequencies (like 40Hz Gamma) are audible at DEFAULT_VOLUME
+  // Lower frequencies need a boost to be equally perceptible
+  if (frequency >= 40) {
+    return DEFAULT_VOLUME;
+  } else if (frequency >= 20) {
+    return DEFAULT_VOLUME * 1.5; // 50% louder for Beta range (20Hz)
+  } else if (frequency >= 10) {
+    return DEFAULT_VOLUME * 2.0; // 100% louder for Alpha range (10Hz)
+  } else if (frequency >= 5) {
+    return DEFAULT_VOLUME * 2.5; // 150% louder for Theta range (5Hz)
+  } else {
+    return DEFAULT_VOLUME * 3.0; // 200% louder for Delta range (2Hz)
+  }
+}
+
 export function extractFrequency(frequencyText: string): number {
   // More robust frequency extraction that handles different formats
   const frequencyMatch = frequencyText.match(/(\d+)/);
@@ -35,8 +53,11 @@ export function createBinauralBeat(frequency: number): AudioContextRef | null {
     oscillator.type = 'sine';
     oscillator.frequency.value = frequency; // Direct assignment instead of setValueAtTime
     
-    // Set volume to a reasonable level
-    gainNode.gain.value = DEFAULT_VOLUME; // Direct assignment for simplicity
+    // Scale volume based on frequency
+    const scaledVolume = getScaledVolume(frequency);
+    
+    // Set volume to a scaled level based on frequency
+    gainNode.gain.value = scaledVolume;
     
     // Connect nodes
     oscillator.connect(gainNode);
@@ -46,7 +67,7 @@ export function createBinauralBeat(frequency: number): AudioContextRef | null {
     oscillator.start();
     
     // Add debug logging
-    console.log(`Audio created: frequency=${frequency}Hz, volume=${DEFAULT_VOLUME}`);
+    console.log(`Audio created: frequency=${frequency}Hz, volume=${scaledVolume}`);
     
     return { 
       context: audioContext, 
@@ -95,7 +116,8 @@ export function toggleAudioPause(audioRef: AudioContextRef | null, isPaused: boo
       audioRef.context.resume().catch(err => {
         console.error("Failed to resume audio context:", err);
         // Fallback to the gain approach
-        audioRef.gainNode.gain.value = DEFAULT_VOLUME;
+        const frequency = audioRef.oscillator.frequency.value;
+        audioRef.gainNode.gain.value = getScaledVolume(frequency);
       });
       audioRef.isPaused = false;
       console.log("Audio resumed");

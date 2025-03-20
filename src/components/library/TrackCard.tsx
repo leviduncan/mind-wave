@@ -34,6 +34,7 @@ const TrackCard = ({ track, toggleFavorite, showSelectButton = true }: TrackCard
         <button 
           className={`${track.isFavorite ? 'text-amber-400' : 'text-gray-300'}`}
           onClick={handleStarClick}
+          aria-label={track.isFavorite ? "Remove from favorites" : "Add to favorites"}
         >
           <Star className={`w-5 h-5 ${track.isFavorite ? 'fill-current' : ''}`} />
         </button>

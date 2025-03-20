@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
@@ -13,9 +12,10 @@ import {
   Calendar 
 } from "lucide-react";
 import MainLayout from "../components/layout/MainLayout";
+import TrackCard from "../components/library/TrackCard";
 
 const Index = () => {
-  const { favorites, recentlyPlayed, stats } = useApp();
+  const { favorites, recentlyPlayed, stats, toggleFavorite } = useApp();
   const navigate = useNavigate();
 
   return (
@@ -113,30 +113,11 @@ const Index = () => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {favorites.slice(0, 3).map((track) => (
-                <div key={track.id} className="track-card">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="bg-accent text-accent-foreground text-xs font-medium px-2.5 py-0.5 rounded-full">
-                      {track.frequency}
-                    </div>
-                    <button className="text-amber-400">
-                      <Star className="w-5 h-5 fill-current" />
-                    </button>
-                  </div>
-                  <h3 className="text-lg font-medium mb-1">{track.name}</h3>
-                  <p className="text-muted-foreground text-sm mb-3">{track.description}</p>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-muted-foreground">
-                      {track.category} &gt; {track.subCategory}
-                    </div>
-                    <button 
-                      onClick={() => navigate(`/session-select?track=${track.id}`)}
-                      className="btn-primary text-sm py-1.5"
-                    >
-                      <Play className="w-4 h-4 mr-1 inline-block" /> 
-                      Select
-                    </button>
-                  </div>
-                </div>
+                <TrackCard 
+                  key={track.id} 
+                  track={track} 
+                  toggleFavorite={toggleFavorite} 
+                />
               ))}
             </div>
           </section>
@@ -159,7 +140,14 @@ const Index = () => {
                   <div className="bg-accent text-accent-foreground text-xs font-medium px-2.5 py-0.5 rounded-full">
                     {track.frequency}
                   </div>
-                  <button className={`${track.isFavorite ? 'text-amber-400' : 'text-gray-300'}`}>
+                  <button 
+                    className={`${track.isFavorite ? 'text-amber-400' : 'text-gray-300'}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(track.id);
+                    }}
+                    aria-label={track.isFavorite ? "Remove from favorites" : "Add to favorites"}
+                  >
                     <Star className={`w-5 h-5 ${track.isFavorite ? 'fill-current' : ''}`} />
                   </button>
                 </div>
