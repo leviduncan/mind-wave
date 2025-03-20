@@ -44,6 +44,7 @@ const SessionInProgress = () => {
     // Clean up any existing audio
     if (audioRef.current) {
       cleanupAudio(audioRef.current);
+      audioRef.current = null;
     }
     
     try {
@@ -57,11 +58,13 @@ const SessionInProgress = () => {
         
         // Show toast notification
         toast.success(`Playing ${currentSession.track.frequency} binaural beat`);
+        console.log(`Session started with track: ${currentSession.track.name}, frequency: ${frequencyValue}Hz`);
       }
       
       // Cleanup function
       return () => {
         if (audioRef.current) {
+          console.log("Cleaning up audio on unmount or track change");
           cleanupAudio(audioRef.current);
           audioRef.current = null;
         }

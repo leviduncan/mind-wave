@@ -33,10 +33,10 @@ export function createBinauralBeat(frequency: number): AudioContextRef | null {
     
     // Configure oscillator
     oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+    oscillator.frequency.value = frequency; // Direct assignment instead of setValueAtTime
     
     // Set volume to a reasonable level
-    gainNode.gain.setValueAtTime(DEFAULT_VOLUME, audioContext.currentTime);
+    gainNode.gain.value = DEFAULT_VOLUME; // Direct assignment for simplicity
     
     // Connect nodes
     oscillator.connect(gainNode);
@@ -44,6 +44,9 @@ export function createBinauralBeat(frequency: number): AudioContextRef | null {
     
     // Start oscillator
     oscillator.start();
+    
+    // Add debug logging
+    console.log(`Audio created: frequency=${frequency}Hz, volume=${DEFAULT_VOLUME}`);
     
     return { 
       context: audioContext, 
@@ -68,6 +71,7 @@ export function cleanupAudio(audioRef: AudioContextRef | null): void {
     if (audioRef.context) {
       audioRef.context.close();
     }
+    console.log("Audio cleaned up successfully");
   } catch (err) {
     console.error("Error during audio cleanup:", err);
   }
@@ -82,17 +86,19 @@ export function toggleAudioPause(audioRef: AudioContextRef | null, isPaused: boo
       audioRef.context.suspend().catch(err => {
         console.error("Failed to suspend audio context:", err);
         // Fallback to the gain approach
-        audioRef.gainNode.gain.setValueAtTime(0, audioRef.context.currentTime);
+        audioRef.gainNode.gain.value = 0;
       });
       audioRef.isPaused = true;
+      console.log("Audio paused");
     } else if (!isPaused && audioRef.isPaused) {
       // Modern approach - resume the audio context
       audioRef.context.resume().catch(err => {
         console.error("Failed to resume audio context:", err);
         // Fallback to the gain approach
-        audioRef.gainNode.gain.setValueAtTime(DEFAULT_VOLUME, audioRef.context.currentTime);
+        audioRef.gainNode.gain.value = DEFAULT_VOLUME;
       });
       audioRef.isPaused = false;
+      console.log("Audio resumed");
     }
   } catch (err) {
     console.error("Error toggling audio pause state:", err);
